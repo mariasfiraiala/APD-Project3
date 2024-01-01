@@ -3,11 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define TRACKER_RANK 0
-#define MAX_FILES 10
-#define MAX_FILENAME 15
-#define HASH_SIZE 32
-#define MAX_CHUNKS 100
+#include "parser.h"
+#include "utils.h"
 
 void *download_thread_func(void *arg)
 {
@@ -32,6 +29,8 @@ void peer(int numtasks, int rank) {
     pthread_t upload_thread;
     void *status;
     int r;
+
+    read_file(rank);
 
     r = pthread_create(&download_thread, NULL, download_thread_func, (void *) &rank);
     if (r) {
