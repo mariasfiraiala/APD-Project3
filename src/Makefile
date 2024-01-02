@@ -1,5 +1,18 @@
-build:
-	mpicc -o tema3 tema3.c parser.c peer.c tracker.c -pthread -Wall
+CC = mpicc
+CFLAGS = -Wall -Werror -Wno-error=unused-variable
+
+SRCDIR = .
+SRCS = $(shell find $(SRCDIR) -name "*.c")
+BIN = tema3
+
+ifeq ($(debug),1)
+	CFLAGS += -DDEBUG
+endif
+
+build: $(BIN)
+
+$(BIN): $(SRCS) 
+	$(CC) -o $@ $^ $(CFLAGS)
 
 clean:
-	rm -rf tema3
+	rm -rf $(BIN)
