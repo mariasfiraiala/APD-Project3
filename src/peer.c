@@ -2,6 +2,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "parser.h"
 #include "utils.h"
@@ -21,6 +22,26 @@ static void *upload_thread_func(void *arg)
     return NULL;
 }
 
+static void send_file(struct file_t *file)
+{
+    MPI_Send(&file->owner, 1, MPI_INT, TRACKER_RANK, 0, MPI_COMM_WORLD);
+    MPI_Send(file->name, MAX_FILENAME + 1, MPI_CHAR, TRACKER_RANK, 0, MPI_COMM_WORLD);
+    MPI_Send(&file->nr_segments, 1, MPI_INT, TRACKER_RANK, 0, MPI_COMM_WORLD);
+    MPI_Send(file->segments, MAX_CHUNKS * (HASH_SIZE + 1), MPI_CHAR, TRACKER_RANK, 0, MPI_COMM_WORLD);
+}
+
+struct client_t *init(int rank)
+{
+    struct client_t *c = read_file(rank);
+
+    MPI_Send(&c->owned_files, 1, MPI_INT, TRACKER_RANK, 0, MPI_COMM_WORLD);
+    for (int i = 0; i < c->owned_files; ++i) {
+        send_file(&c->o_files[i]);
+    }
+
+    return c;
+}
+
 void peer(int numtasks, int rank)
 {
     pthread_t download_thread;
@@ -28,7 +49,7 @@ void peer(int numtasks, int rank)
     void *status;
     int r;
 
-    struct client_t *clnt = read_file(rank);
+    struct client_t *c = init(rank);
 
     r = pthread_create(&download_thread, NULL, download_thread_func, (void *) &rank);
     if (r) {

@@ -35,13 +35,14 @@ struct client_t *read_file(int rank)
 		char buff[MAX_LINE], *argv[MAX_LINE];
 		fgets(buff, MAX_LINE, in);
 
-		int argc = parse_by_whitespace(buff, argv);
+		parse_by_whitespace(buff, argv);
 		snprintf(client->o_files[i].name, MAX_FILENAME + 1, "%s", argv[0]);
 		client->o_files[i].nr_segments = atoi(argv[1]);
+		client->o_files[i].owner = rank;
 
 		for (int j = 0; j < client->o_files[i].nr_segments; ++j) {
 			fgets(buff, MAX_LINE, in);
-			argc = parse_by_whitespace(buff, argv);
+			parse_by_whitespace(buff, argv);
 			snprintf(client->o_files[i].segments[j], HASH_SIZE + 1, "%s", argv[0]);		
 		}
 	}
@@ -51,7 +52,7 @@ struct client_t *read_file(int rank)
 	for (int i = 0; i < client->wanted_files; ++i) {
 		char buff[MAX_LINE], *argv[MAX_LINE];
 		fgets(buff, MAX_LINE, in);
-		int argc = parse_by_whitespace(buff, argv);
+		parse_by_whitespace(buff, argv);
 		snprintf(client->w_files[i], MAX_FILENAME + 1, "%s", argv[0]);
 	}
 
