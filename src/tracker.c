@@ -37,12 +37,17 @@ static struct swarm_t *init(int numtasks)
     for (int i = 1; i < numtasks; ++i)
         get_files(s, i);
 
+    for (int i = 1; i < numtasks; ++i) {
+        int ack = 1;
+        MPI_Send(&ack, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
+    }
+
     return s;
 }
 
 void tracker(int numtasks, int rank)
 {
-    struct swarm_t *s = init(numtasks); 
+    struct swarm_t *s = init(numtasks);
 #ifdef DEBUG
     FILE *out = fopen("swarm.txt", "w");
     print_swarm(s, out);

@@ -39,6 +39,9 @@ struct client_t *init(int rank)
         send_file(&c->o_files[i]);
     }
 
+    int ack;
+    MPI_Recv(&ack, 1, MPI_INT, TRACKER_RANK, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
     return c;
 }
 
