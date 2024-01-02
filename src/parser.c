@@ -17,15 +17,17 @@ int parse_by_whitespace(char *buf, char **argv)
 char *create_file_name(int rank)
 {
 	char *file = malloc(MAX_FILENAME);
+	DIE(!file, "malloc() failed");
 	snprintf(file, MAX_FILENAME, "in%d.txt", rank);
 
 	return file;
 }
 
-void read_file(int rank)
+struct client_t *read_file(int rank)
 {
 	FILE *in = fopen(create_file_name(rank), "r");
 	struct client_t *client = malloc(sizeof(*client));
+	DIE(!client, "malloc() failed");
 
 	fscanf(in, "%d\n", &client->owned_files);
 
@@ -52,4 +54,6 @@ void read_file(int rank)
 		int argc = parse_by_whitespace(buff, argv);
 		snprintf(client->w_files[i], MAX_FILENAME + 1, "%s", argv[0]);
 	}
+
+	return client;
 }

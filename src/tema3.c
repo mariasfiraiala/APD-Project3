@@ -3,61 +3,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "parser.h"
+#include "peer.h"
+#include "tracker.h"
 #include "utils.h"
 
-void *download_thread_func(void *arg)
+int main (int argc, char *argv[])
 {
-    int rank = *(int*) arg;
-
-    return NULL;
-}
-
-void *upload_thread_func(void *arg)
-{
-    int rank = *(int*) arg;
-
-    return NULL;
-}
-
-void tracker(int numtasks, int rank) {
-
-}
-
-void peer(int numtasks, int rank) {
-    pthread_t download_thread;
-    pthread_t upload_thread;
-    void *status;
-    int r;
-
-    read_file(rank);
-
-    r = pthread_create(&download_thread, NULL, download_thread_func, (void *) &rank);
-    if (r) {
-        printf("Eroare la crearea thread-ului de download\n");
-        exit(-1);
-    }
-
-    r = pthread_create(&upload_thread, NULL, upload_thread_func, (void *) &rank);
-    if (r) {
-        printf("Eroare la crearea thread-ului de upload\n");
-        exit(-1);
-    }
-
-    r = pthread_join(download_thread, &status);
-    if (r) {
-        printf("Eroare la asteptarea thread-ului de download\n");
-        exit(-1);
-    }
-
-    r = pthread_join(upload_thread, &status);
-    if (r) {
-        printf("Eroare la asteptarea thread-ului de upload\n");
-        exit(-1);
-    }
-}
- 
-int main (int argc, char *argv[]) {
     int numtasks, rank;
  
     int provided;
