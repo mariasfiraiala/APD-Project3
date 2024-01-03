@@ -5,6 +5,6 @@
 
 void print_file(struct file_t *s, FILE *out);
 
-void print_swarm(struct swarm_t *s, FILE *out);
+void print_tracker(struct tracker_t *s, FILE *out);
 
 #endif

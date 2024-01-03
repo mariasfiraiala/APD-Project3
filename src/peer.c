@@ -22,12 +22,22 @@ static void *upload_thread_func(void *arg)
     return NULL;
 }
 
+static void send_meta(struct file_meta_t *meta)
+{
+    MPI_Send(meta->name, MAX_FILENAME + 1, MPI_CHAR, TRACKER_RANK, 0, MPI_COMM_WORLD);
+    MPI_Send(&meta->size, 1, MPI_INT, TRACKER_RANK, 0, MPI_COMM_WORLD);
+}
+
+static void send_segments(struct file_segments_t *segments)
+{
+    MPI_Send(&segments->nr_segments, 1, MPI_INT, TRACKER_RANK, 0, MPI_COMM_WORLD);
+    MPI_Send(segments->segments, MAX_CHUNKS * (HASH_SIZE + 1), MPI_CHAR, TRACKER_RANK, 0, MPI_COMM_WORLD);
+}
+
 static void send_file(struct file_t *file)
 {
-    MPI_Send(&file->owner, 1, MPI_INT, TRACKER_RANK, 0, MPI_COMM_WORLD);
-    MPI_Send(file->name, MAX_FILENAME + 1, MPI_CHAR, TRACKER_RANK, 0, MPI_COMM_WORLD);
-    MPI_Send(&file->nr_segments, 1, MPI_INT, TRACKER_RANK, 0, MPI_COMM_WORLD);
-    MPI_Send(file->segments, MAX_CHUNKS * (HASH_SIZE + 1), MPI_CHAR, TRACKER_RANK, 0, MPI_COMM_WORLD);
+    send_meta(&file->meta);
+    send_segments(&file->segments);
 }
 
 struct client_t *init(int rank)

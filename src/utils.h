@@ -9,6 +9,7 @@
 #define HASH_SIZE 32
 #define MAX_CHUNKS 100
 #define MAX_LINE 100
+#define MAX_CLIENTS 7
 
 #define DIE(assertion, call_description)                                       \
     do {                                                                       \
@@ -19,11 +20,19 @@
         }                                                                      \
     } while (0)
 
-struct file_t {
-    int owner;
+struct file_meta_t {
     char name[MAX_FILENAME + 1];
+    int size;
+};
+
+struct file_segments_t {
     int nr_segments;
     char segments[MAX_CHUNKS][HASH_SIZE + 1];
+};
+
+struct file_t {
+    struct file_meta_t meta;
+    struct file_segments_t segments;
 };
 
 struct client_t {
@@ -33,10 +42,20 @@ struct client_t {
     char w_files[MAX_FILES][MAX_FILENAME + 1];
 };
 
+struct swarm_client_t {
+    int rank;
+    struct file_segments_t segments;
+};
+
 struct swarm_t {
-    int capacity;
+    struct file_meta_t file_meta;
     int size;
-    struct file_t *all_files;
+    struct swarm_client_t clients[MAX_CLIENTS];
+};
+
+struct tracker_t {
+    int size;
+    struct swarm_t swarms[MAX_FILES];
 };
 
 #endif
