@@ -6,25 +6,8 @@
 
 #include "tracker.h"
 #include "debug.h"
+#include "send-recv.h"
 #include "utils.h"
-
-static void receive_meta(struct file_meta_t *meta, int rank)
-{
-    MPI_Recv(meta->name, MAX_FILENAME + 1, MPI_CHAR, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    MPI_Recv(&meta->size, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-}
-
-static void receive_segments(struct file_segments_t *segments, int rank)
-{
-    MPI_Recv(&segments->nr_segments, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    MPI_Recv(segments->segments, MAX_CHUNKS * (HASH_SIZE + 1), MPI_CHAR, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-}
-
-static void receive_file(struct file_t *file, int rank)
-{
-    receive_meta(&file->meta, rank);
-    receive_segments(&file->segments, rank);
-}
 
 static void insert_client(struct swarm_client_t *c, struct file_segments_t *s)
 {
@@ -61,12 +44,12 @@ static void insert_swarm(struct swarm_t *s, struct file_t *f, int rank)
     }
 }
 
-static int eq_swarm(struct swarm_t *s, struct file_meta_t *f)
+static int eq_swarm(struct swarm_t *s, char *f)
 {
-    return (strcmp(s->file_meta.name, f->name) == 0 ? 1 : 0);
+    return (strcmp(s->file_meta.name, f) == 0 ? 1 : 0);
 }
 
-static int find_swarm(struct tracker_t *t, struct file_meta_t *f)
+static int find_swarm(struct tracker_t *t, char *f)
 {
     for (int i = 0; i < t->size; ++i)
         if (eq_swarm(&t->swarms[i], f))
@@ -85,7 +68,7 @@ static void create_swarm(struct swarm_t *s, struct file_t *f, int rank)
 
 static void insert_tracker(struct tracker_t *t, struct file_t *f, int rank)
 {
-    int found_swarm = find_swarm(t, &f->meta);
+    int found_swarm = find_swarm(t, f->meta.name);
 
     if (found_swarm != -1)
         insert_swarm(&t->swarms[found_swarm], f, rank);
@@ -93,39 +76,57 @@ static void insert_tracker(struct tracker_t *t, struct file_t *f, int rank)
         create_swarm(&t->swarms[t->size++], f, rank);
 }
 
-static void get_files(struct tracker_t *t, int rank)
+static void get_init_files(struct tracker_t *t, int rank)
 {
-    int nr_files;
-    MPI_Recv(&nr_files, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    int owned_files;
+    MPI_Recv(&owned_files, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-    for (int j = 0; j < nr_files; ++j) {
+    for (int j = 0; j < owned_files; ++j) {
         struct file_t file;
         receive_file(&file, rank);
         insert_tracker(t, &file, rank);
     }
 }
 
+static void get_send_request_files(struct tracker_t *t, int rank)
+{
+    int wanted_files;
+    MPI_Recv(&wanted_files, 1, MPI_INT, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    for (int i = 0; i < wanted_files; ++i) {
+        char w_file[MAX_FILENAME + 1];
+        MPI_Recv(w_file, MAX_FILENAME + 1, MPI_CHAR, rank, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        int found_swarm = find_swarm(t, w_file);
+        send_swarm(&t->swarms[found_swarm], rank);
+    }
+}
+
 static struct tracker_t *init(int numtasks)
 {
-    struct tracker_t *s = calloc(1, sizeof(*s));
-    DIE(!s, "calloc() failed");
+    struct tracker_t *t = calloc(1, sizeof(*t));
+    DIE(!t, "calloc() failed");
 
     for (int i = 1; i < numtasks; ++i)
-        get_files(s, i);
+        get_init_files(t, i);
 
     for (int i = 1; i < numtasks; ++i) {
         int ack = 1;
         MPI_Send(&ack, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
     }
 
-    return s;
+    return t;
 }
 
 void tracker(int numtasks, int rank)
 {
-    struct tracker_t *s = init(numtasks);
+    struct tracker_t *t = init(numtasks);
+
 #ifdef DEBUG
     FILE *out = fopen("tracker.txt", "w");
-    print_tracker(s, out);
+    print_tracker(t, out);
 #endif
+
+    for (int i = 1; i < numtasks; ++i)
+        get_send_request_files(t, i);
 }

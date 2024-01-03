@@ -56,5 +56,7 @@ struct client_t *read_file(int rank)
 		snprintf(client->w_files[i], MAX_FILENAME + 1, "%s", argv[0]);
 	}
 
+	client->rank = rank;
+
 	return client;
 }

@@ -36,6 +36,7 @@ struct file_t {
 };
 
 struct client_t {
+    int rank;
     int owned_files;
     int wanted_files;
     struct file_t o_files[MAX_FILES];
