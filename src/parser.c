@@ -16,9 +16,9 @@ int parse_by_whitespace(char *buf, char **argv)
 
 char *create_file_name(int rank)
 {
-	char *file = malloc(MAX_FILENAME);
+	char *file = malloc(MAX_FILENAME + 1);
 	DIE(!file, "malloc() failed");
-	snprintf(file, MAX_FILENAME, "in%d.txt", rank);
+	snprintf(file, MAX_FILENAME + 1, "in%d.txt", rank);
 
 	return file;
 }
@@ -55,8 +55,6 @@ struct client_t *read_file(int rank)
 		parse_by_whitespace(buff, argv);
 		snprintf(client->w_files[i], MAX_FILENAME + 1, "%s", argv[0]);
 	}
-
-	client->rank = rank;
 
 	return client;
 }

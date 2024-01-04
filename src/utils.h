@@ -41,6 +41,8 @@ struct client_t {
     int wanted_files;
     struct file_t o_files[MAX_FILES];
     char w_files[MAX_FILES][MAX_FILENAME + 1];
+    int load[MAX_CLIENTS];
+    int running;
 };
 
 struct swarm_client_t {
@@ -58,5 +60,37 @@ struct tracker_t {
     int size;
     struct swarm_t swarms[MAX_FILES];
 };
+
+void insert_client(struct swarm_client_t *c, struct file_segments_t *s);
+
+int find_client(struct swarm_t *s, int rank);
+
+void create_client(struct swarm_client_t *c, struct file_t *f, int rank);
+
+void insert_swarm(struct swarm_t *s, struct file_t *f, int rank);
+
+int eq_swarm(struct swarm_t *s, char *f);
+
+int find_swarm(struct tracker_t *t, char *f);
+
+void create_swarm(struct swarm_t *s, struct file_t *f, int rank);
+
+void insert_tracker(struct tracker_t *t, struct file_t *f, int rank);
+
+void get_init_files(struct tracker_t *t, int rank);
+
+void get_send_request_files(struct tracker_t *t, int rank);
+
+int empty_string(char *s);
+
+int get_missing_chunks(struct client_t *c, struct file_meta_t *f, int *chunks);
+
+int get_chunks_client(struct swarm_t *s, int index, int *clients);
+
+int get_best_peer(int *load, int *clients, int cl);
+
+char *get_hash(struct swarm_t *s, int rank, int index);
+
+void request_missing_chunks(struct client_t *c, struct swarm_t *s);
 
 #endif
