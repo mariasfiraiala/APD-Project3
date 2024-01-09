@@ -5,7 +5,7 @@
 #include "parser.h"
 #include "utils.h"
 
-int parse_by_whitespace(char *buf, char **argv)
+static int parse_by_whitespace(char *buf, char **argv)
 {
 	int argc = 0;
 	for (char *p = strtok(buf, " \t\n"); p; p = strtok(NULL, " \t\n"))
@@ -14,7 +14,7 @@ int parse_by_whitespace(char *buf, char **argv)
 	return argc;
 }
 
-char *create_file_name(int rank)
+static char *create_file_name(int rank)
 {
 	char *file = malloc(MAX_FILENAME + 1);
 	DIE(!file, "malloc() failed");
@@ -25,10 +25,10 @@ char *create_file_name(int rank)
 
 struct client_t *read_file(int rank)
 {
-	FILE *in = fopen(create_file_name(rank), "r");
-	struct client_t *client = malloc(sizeof(*client));
-	DIE(!client, "malloc() failed");
+	struct client_t *client = calloc(1, sizeof(*client));
+	DIE(!client, "calloc() failed");
 
+	FILE *in = fopen(create_file_name(rank), "r");
 	fscanf(in, "%d\n", &client->owned_files);
 
 	for (int i = 0; i < client->owned_files; ++i) {
@@ -38,12 +38,11 @@ struct client_t *read_file(int rank)
 		parse_by_whitespace(buff, argv);
 		snprintf(client->o_files[i].meta.name, MAX_FILENAME + 1, "%s", argv[0]);
 		client->o_files[i].meta.size = atoi(argv[1]);
-		client->o_files[i].segments.nr_segments = atoi(argv[1]);
 
 		for (int j = 0; j < client->o_files[i].meta.size; ++j) {
 			fgets(buff, MAX_LINE, in);
 			parse_by_whitespace(buff, argv);
-			snprintf(client->o_files[i].segments.segments[j], HASH_SIZE + 1, "%s", argv[0]);		
+			snprintf(client->o_files[i].segments[j], HASH_SIZE + 1, "%s", argv[0]);		
 		}
 	}
 
@@ -53,7 +52,7 @@ struct client_t *read_file(int rank)
 		char buff[MAX_LINE], *argv[MAX_LINE];
 		fgets(buff, MAX_LINE, in);
 		parse_by_whitespace(buff, argv);
-		snprintf(client->w_files[i], MAX_FILENAME + 1, "%s", argv[0]);
+		snprintf(client->w_files[i].meta.name, MAX_FILENAME + 1, "%s", argv[0]);
 	}
 
 	return client;

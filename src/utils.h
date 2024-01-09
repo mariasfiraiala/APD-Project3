@@ -10,6 +10,15 @@
 #define MAX_CHUNKS 100
 #define MAX_LINE 100
 #define MAX_CLIENTS 7
+#define MOD 10
+#define TAG_INIT 0
+#define TAG_SWARM 1
+#define TAG_DOWNLOAD 2
+#define TAG_DOWNLOAD_ACK 3
+#define TAG_UPDATE 4
+#define TAG_FINISH_FILE 5
+#define TAG_FINISH_CLIENT 6
+#define TAG_STOP 7
 
 #define DIE(assertion, call_description)                                       \
     do {                                                                       \
@@ -27,69 +36,51 @@ struct file_meta_t {
 
 struct file_segments_t {
     int nr_segments;
+    int segments[MAX_CHUNKS];
+};
+
+struct full_file_t {
+    struct file_meta_t meta;
     char segments[MAX_CHUNKS][HASH_SIZE + 1];
 };
 
-struct file_t {
+struct sparse_file_t {
     struct file_meta_t meta;
-    struct file_segments_t segments;
+    struct file_segments_t chunks;
 };
 
 struct client_t {
     int rank;
     int owned_files;
     int wanted_files;
-    struct file_t o_files[MAX_FILES];
-    char w_files[MAX_FILES][MAX_FILENAME + 1];
+    struct full_file_t o_files[MAX_FILES];
+    struct sparse_file_t w_files[MAX_FILES];
     int load[MAX_CLIENTS];
-    int running;
+    int received_chunks;
+    int downloaded_files;
 };
 
 struct swarm_client_t {
     int rank;
-    struct file_segments_t segments;
+    struct file_segments_t chunks;
 };
 
 struct swarm_t {
-    struct file_meta_t file_meta;
+    struct full_file_t file;
     int size;
     struct swarm_client_t clients[MAX_CLIENTS];
 };
 
 struct tracker_t {
-    int size;
+    int nr_swarms;
     struct swarm_t swarms[MAX_FILES];
 };
 
-void insert_client(struct swarm_client_t *c, struct file_segments_t *s);
+void receive_init_files(struct tracker_t *t, int rank);
 
-int find_client(struct swarm_t *s, int rank);
+void receive_swarm_request(struct tracker_t * t);
 
-void create_client(struct swarm_client_t *c, struct file_t *f, int rank);
-
-void insert_swarm(struct swarm_t *s, struct file_t *f, int rank);
-
-int eq_swarm(struct swarm_t *s, char *f);
-
-int find_swarm(struct tracker_t *t, char *f);
-
-void create_swarm(struct swarm_t *s, struct file_t *f, int rank);
-
-void insert_tracker(struct tracker_t *t, struct file_t *f, int rank);
-
-void get_init_files(struct tracker_t *t, int rank);
-
-void get_send_request_files(struct tracker_t *t, int rank);
-
-int empty_string(char *s);
-
-int get_missing_chunks(struct client_t *c, struct file_meta_t *f, int *chunks);
-
-int get_chunks_client(struct swarm_t *s, int index, int *clients);
-
-int get_best_peer(int *load, int *clients, int cl);
-
-char *get_hash(struct swarm_t *s, int rank, int index);
+void receive_update_file(struct tracker_t *t, int rank);
 
 void request_missing_chunks(struct client_t *c, struct swarm_t *s);
 

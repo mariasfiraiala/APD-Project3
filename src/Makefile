@@ -1,5 +1,5 @@
 CC = mpicc
-CFLAGS = -Wall -Werror -Wno-error=unused-variable
+CFLAGS = -Wall -Werror -Wno-error=unused-variable -g
 
 SRCDIR = .
 SRCS = $(shell find $(SRCDIR) -name "*.c")

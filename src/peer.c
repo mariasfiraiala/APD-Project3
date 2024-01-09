@@ -8,29 +8,23 @@
 #include "utils.h"
 #include "peer.h"
 #include "send_recv.h"
-#include "debug.h"
 
 static void *download_thread_func(void *arg)
 {
     struct client_t *c = (struct client_t *) arg;
 
-    MPI_Send(&c->wanted_files, 1, MPI_INT, TRACKER_RANK, 0, MPI_COMM_WORLD);
+    MPI_Send(&c->wanted_files, 1, MPI_INT, TRACKER_RANK, TAG_SWARM, MPI_COMM_WORLD);
     for (int i = 0; i < c->wanted_files; ++i) {
-        MPI_Send(c->w_files[i], MAX_FILENAME + 1, MPI_CHAR, TRACKER_RANK, 0, MPI_COMM_WORLD);
+        MPI_Send(c->w_files[i].meta.name, MAX_FILENAME + 1, MPI_CHAR, TRACKER_RANK, TAG_SWARM, MPI_COMM_WORLD);
 
         struct swarm_t s;
-        receive_swarm(&s, TRACKER_RANK);
-
-#ifdef DEBUG
-        char file[MAX_FILENAME + 1];
-        snprintf(file, MAX_FILENAME + 1, "swarm%d.txt", c->rank);
-        FILE *out = fopen(file, "a");
-        print_swarm(&s, out);
-#endif
+        receive_swarm(&s, TRACKER_RANK, TAG_SWARM);
 
         request_missing_chunks(c, &s);
     }
 
+    int finished = 0;
+    MPI_Send(&finished, 1, MPI_INT, TRACKER_RANK, TAG_FINISH_CLIENT, MPI_COMM_WORLD);
     return NULL;
 }
 
@@ -38,13 +32,22 @@ static void *upload_thread_func(void *arg)
 {
     struct client_t *c = (struct client_t *) arg;
 
-    while(c->running) {
+    char hash[HASH_SIZE + 1];
+    int ack, stop;
+    int running = 1;
+    while (running) {
         MPI_Status status;
-        char hash[HASH_SIZE + 1];
-        MPI_Recv(hash, HASH_SIZE + 1, MPI_CHAR, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+        MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
-        int ack = 1;
-        MPI_Send(&ack, 1, MPI_INT, status.MPI_SOURCE, 0, MPI_COMM_WORLD);
+        switch (status.MPI_TAG) {
+        case TAG_DOWNLOAD:
+            MPI_Recv(hash, HASH_SIZE + 1, MPI_CHAR, MPI_ANY_SOURCE, TAG_DOWNLOAD, MPI_COMM_WORLD, &status);
+            MPI_Send(&ack, 1, MPI_INT, status.MPI_SOURCE, TAG_DOWNLOAD_ACK, MPI_COMM_WORLD);
+            break;
+        case TAG_STOP:
+            MPI_Recv(&stop, 1, MPI_INT, TRACKER_RANK, TAG_STOP, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            running = 0;
+        }
     }
 
     return NULL;
@@ -54,16 +57,13 @@ struct client_t *init(int rank)
 {
     struct client_t *c = read_file(rank);
     c->rank = rank;
-    c->running = 1;
-    memset(c->load, 0, MAX_CLIENTS * sizeof(*c->load));
 
-    MPI_Send(&c->owned_files, 1, MPI_INT, TRACKER_RANK, 0, MPI_COMM_WORLD);
-    for (int i = 0; i < c->owned_files; ++i) {
-        send_file(&c->o_files[i], TRACKER_RANK);
-    }
+    MPI_Send(&c->owned_files, 1, MPI_INT, TRACKER_RANK, TAG_INIT, MPI_COMM_WORLD);
+    for (int i = 0; i < c->owned_files; ++i)
+        send_full_file(&c->o_files[i], TRACKER_RANK, TAG_INIT);
 
     int ack;
-    MPI_Recv(&ack, 1, MPI_INT, TRACKER_RANK, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    MPI_Recv(&ack, 1, MPI_INT, TRACKER_RANK, TAG_INIT, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
     return c;
 }

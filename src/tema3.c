@@ -7,6 +7,8 @@
 #include "tracker.h"
 #include "utils.h"
 
+int running = 1;
+
 int main (int argc, char *argv[])
 {
     int numtasks, rank;
