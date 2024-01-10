@@ -8,6 +8,13 @@
 #include "utils.h"
 #include "send_recv.h"
 
+/**
+ * Initializes tracker with info from peers.
+ * @param numtasks
+ *	Number of processes in communicator
+ * @return
+ *  Pointer to tracker structure, fully intialized and ready for exchange
+ */
 static struct tracker_t *init(int numtasks)
 {
     struct tracker_t *t = calloc(1, sizeof(*t));

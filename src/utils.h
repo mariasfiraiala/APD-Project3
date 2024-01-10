@@ -57,7 +57,6 @@ struct client_t {
     struct sparse_file_t w_files[MAX_FILES];
     int load[MAX_CLIENTS];
     int received_chunks;
-    int downloaded_files;
 };
 
 struct swarm_client_t {
@@ -76,12 +75,52 @@ struct tracker_t {
     struct swarm_t swarms[MAX_FILES];
 };
 
+/**
+ * Populates tracker with owned files from each seed.
+ *
+ * @param t
+ *	Tracker to be populated
+ * @param rank
+ *  Sender rank
+ * @return
+ *	No return
+ */
 void receive_init_files(struct tracker_t *t, int rank);
 
+/**
+ * Receives and sends back swarms.
+ *
+ * @param t
+ *	Tracker that receives and sends back swarms
+ * @param rank
+ *  Client rank
+ * @return
+ *	No return
+ */
 void receive_swarm_request(struct tracker_t * t, int rank);
 
+/**
+ * Receives and sends back updated files.
+ *
+ * @param t
+ *	Tracker that receives and sends back files
+ * @param rank
+ *  Sender rank
+ * @return
+ *	No return
+ */
 void receive_update_file(struct tracker_t *t, int rank);
 
+/**
+ * Requests missing chunks from peers.
+ *
+ * @param c
+ *	Client that needs swarms / segmentss
+ * @param s
+ *  Swarm that contains info about the incomplete file
+ * @return
+ *	No return
+ */
 void request_missing_chunks(struct client_t *c, struct swarm_t *s);
 
 #endif

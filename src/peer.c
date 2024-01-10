@@ -9,6 +9,14 @@
 #include "peer.h"
 #include "send_recv.h"
 
+/**
+ * Download thread, interacts with both the tracker and other clients.
+ *
+ * @param arg
+ *  Pointer to client structure
+ * @return
+ *  NULL, for correctly exiting the thread
+ */
 static void *download_thread_func(void *arg)
 {
     struct client_t *c = (struct client_t *) arg;
@@ -27,6 +35,15 @@ static void *download_thread_func(void *arg)
     return NULL;
 }
 
+/**
+ * Upload thread, interacts with other clients, and with the tracker
+ * in order to receive the exit signal.
+ *
+ * @param arg
+ *  Pointer to client structure
+ * @return
+ *  NULL, for correctly exiting the thread
+ */
 static void *upload_thread_func(void *arg)
 {
     struct client_t *c = (struct client_t *) arg;
@@ -52,7 +69,16 @@ static void *upload_thread_func(void *arg)
     return NULL;
 }
 
-struct client_t *init(int rank)
+/**
+ * Creates client with info from its input file and sends owned files
+ * to tracker. 
+ *
+ * @param rank
+ *  Process rank
+ * @return
+ *  Pointer to client structure, fully initialized and ready for exchange
+ */
+static struct client_t *init(int rank)
 {
     struct client_t *c = read_file(rank);
     c->rank = rank;

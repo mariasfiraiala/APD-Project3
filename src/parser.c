@@ -5,6 +5,16 @@
 #include "parser.h"
 #include "utils.h"
 
+/**
+ * Parses by whitespaces.
+ *
+ * @param buf
+ *	Buffer to be parsed
+ * @param argv
+ *	List of non-whitespace strings
+ * @return
+ *	Number of non-whitespace strings
+ */
 static int parse_by_whitespace(char *buf, char **argv)
 {
 	int argc = 0;
@@ -14,6 +24,14 @@ static int parse_by_whitespace(char *buf, char **argv)
 	return argc;
 }
 
+/**
+ * Creates input file name based on client rank.
+ *
+ * @param rank
+ *	The process rank
+ * @return
+ *	String containing the file name
+ */
 static char *create_file_name(int rank)
 {
 	char *file = malloc(MAX_FILENAME + 1);

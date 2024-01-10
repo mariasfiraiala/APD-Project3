@@ -5,10 +5,6 @@ SRCDIR = .
 SRCS = $(shell find $(SRCDIR) -name "*.c")
 BIN = tema3
 
-ifeq ($(debug),1)
-	CFLAGS += -DDEBUG
-endif
-
 build: $(BIN)
 
 $(BIN): $(SRCS) 
