@@ -36,7 +36,7 @@ void tracker(int numtasks, int rank)
 
         switch (status.MPI_TAG) {
         case TAG_SWARM:
-            receive_swarm_request(t);
+            receive_swarm_request(t, status.MPI_SOURCE);
             break;
 
         case TAG_UPDATE:
@@ -44,11 +44,11 @@ void tracker(int numtasks, int rank)
             break;
 
         case TAG_FINISH_FILE:
-            MPI_Recv(&finished, 1, MPI_INT, MPI_ANY_SOURCE, TAG_FINISH_FILE, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(&finished, 1, MPI_INT, status.MPI_SOURCE, TAG_FINISH_FILE, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             break;
 
         case TAG_FINISH_CLIENT:
-            MPI_Recv(&finished, 1, MPI_INT, MPI_ANY_SOURCE, TAG_FINISH_CLIENT, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(&finished, 1, MPI_INT, status.MPI_SOURCE, TAG_FINISH_CLIENT, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             --clients;
             break;
         }

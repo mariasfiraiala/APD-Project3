@@ -78,7 +78,7 @@ struct tracker_t {
 
 void receive_init_files(struct tracker_t *t, int rank);
 
-void receive_swarm_request(struct tracker_t * t);
+void receive_swarm_request(struct tracker_t * t, int rank);
 
 void receive_update_file(struct tracker_t *t, int rank);
 

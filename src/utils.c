@@ -87,23 +87,17 @@ void receive_init_files(struct tracker_t *t, int rank)
     }
 }
 
-void receive_swarm_request(struct tracker_t *t)
+void receive_swarm_request(struct tracker_t *t, int rank)
 {
-    int wanted_files;
-    MPI_Status status;
-    MPI_Recv(&wanted_files, 1, MPI_INT, MPI_ANY_SOURCE, TAG_SWARM, MPI_COMM_WORLD, &status);
-    for (int i = 0; i < wanted_files; ++i) {
-        char file[MAX_FILENAME + 1];
-        MPI_Recv(file, MAX_FILENAME + 1, MPI_CHAR, status.MPI_SOURCE, TAG_SWARM, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    char file[MAX_FILENAME + 1];
+    MPI_Recv(file, MAX_FILENAME + 1, MPI_CHAR, rank, TAG_SWARM, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-        int found_swarm = s_find_name(t, file);
-        send_swarm(&t->swarms[found_swarm], status.MPI_SOURCE, TAG_SWARM);
-    }
+    int found_swarm = s_find_name(t, file);
+    send_swarm(&t->swarms[found_swarm], rank, TAG_SWARM);
 }
 
 void receive_update_file(struct tracker_t *t, int rank)
 {
-    printf("Here tracker\n");
     struct sparse_file_t file;
     receive_sparse_file(&file, rank, TAG_UPDATE);
 
@@ -198,10 +192,8 @@ void finished_file(struct client_t *c, struct full_file_t *f)
 
 void request_missing_chunks(struct client_t *c, struct swarm_t *s)
 {
-    int *chunks = malloc(MAX_CHUNKS * sizeof(*chunks));
-    DIE(!chunks, "malloc() failed");
-    int *clients = malloc(MAX_CLIENTS * sizeof(*clients));
-    DIE(!clients, "malloc() failed");
+    int chunks[MAX_CHUNKS];
+    int clients[MAX_CLIENTS];
 
     int ch = get_missing_chunks(c, &s->file, chunks);
     for (int i = 0; i < ch; ++i) {
@@ -218,10 +210,10 @@ void request_missing_chunks(struct client_t *c, struct swarm_t *s)
         update_missing_chunk(c, &s->file, chunks[i]);
         
         c->received_chunks = (c->received_chunks + 1) % MOD;
-        // if (!c->received_chunks || i == ch - 1) {
-        //     send_update_file(c, &s->file.meta);
-        //     receive_swarm(s, TRACKER_RANK, TAG_UPDATE);
-        // }
+        if (!c->received_chunks || i == ch - 1) {
+            send_update_file(c, &s->file.meta);
+            receive_swarm(s, TRACKER_RANK, TAG_UPDATE);
+        }
     }
     finished_file(c, &s->file);
 }

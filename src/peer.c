@@ -13,7 +13,6 @@ static void *download_thread_func(void *arg)
 {
     struct client_t *c = (struct client_t *) arg;
 
-    MPI_Send(&c->wanted_files, 1, MPI_INT, TRACKER_RANK, TAG_SWARM, MPI_COMM_WORLD);
     for (int i = 0; i < c->wanted_files; ++i) {
         MPI_Send(c->w_files[i].meta.name, MAX_FILENAME + 1, MPI_CHAR, TRACKER_RANK, TAG_SWARM, MPI_COMM_WORLD);
 
@@ -41,7 +40,7 @@ static void *upload_thread_func(void *arg)
 
         switch (status.MPI_TAG) {
         case TAG_DOWNLOAD:
-            MPI_Recv(hash, HASH_SIZE + 1, MPI_CHAR, MPI_ANY_SOURCE, TAG_DOWNLOAD, MPI_COMM_WORLD, &status);
+            MPI_Recv(hash, HASH_SIZE + 1, MPI_CHAR, status.MPI_SOURCE, TAG_DOWNLOAD, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             MPI_Send(&ack, 1, MPI_INT, status.MPI_SOURCE, TAG_DOWNLOAD_ACK, MPI_COMM_WORLD);
             break;
         case TAG_STOP:
