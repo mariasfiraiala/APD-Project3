@@ -1,7 +1,7 @@
 CC = mpicc
-CFLAGS = -Wall -Werror -Wno-error=unused-variable -g
+CFLAGS = -Wall -Werror -g -I include/
 
-SRCDIR = .
+SRCDIR = src
 SRCS = $(shell find $(SRCDIR) -name "*.c")
 BIN = tema3
 

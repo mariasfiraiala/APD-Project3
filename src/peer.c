@@ -46,8 +46,6 @@ static void *download_thread_func(void *arg)
  */
 static void *upload_thread_func(void *arg)
 {
-    struct client_t *c = (struct client_t *) arg;
-
     char hash[HASH_SIZE + 1];
     int ack, stop;
     int running = 1;
