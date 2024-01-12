@@ -7,7 +7,7 @@
  * @param numtasks
  *	Number of process in communicator
  * @param rank
- *  Rank of current process
+ *	Rank of current process
  * @return
  *	No return value
  */
